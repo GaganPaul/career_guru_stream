@@ -1,0 +1,11 @@
+streamlit
+langchain
+langchain-groq
+docx2txt
+pdfplumber
+pypdf2
+pillow
+markdown-it-py
+tqdm
+firebase-admin
+streamlit-option-menu

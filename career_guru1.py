@@ -9,11 +9,30 @@ import firebase_admin
 from firebase_admin import credentials, firestore, auth
 from streamlit_option_menu import option_menu
 import time
+import json
+
 
 # Firebase Initialization
 if not firebase_admin._apps:
-    cred = credentials.Certificate(
-        "C:\\Users\\Gagan\\OneDrive\\Desktop\\career_guru_stream\\careerguru-f1540-firebase-adminsdk-fbsvc-e0a2a00921.json")
+    # For local development
+    if os.path.exists("serviceAccountKey.json"):
+        cred = credentials.Certificate("serviceAccountKey.json")
+    else:
+        # For production (Render.com)
+        firebase_config = {
+            "type": os.environ.get("FIREBASE_TYPE"),
+            "project_id": os.environ.get("FIREBASE_PROJECT_ID"),
+            "private_key_id": os.environ.get("FIREBASE_PRIVATE_KEY_ID"),
+            "private_key": os.environ.get("FIREBASE_PRIVATE_KEY").replace('\\n', '\n'),
+            "client_email": os.environ.get("FIREBASE_CLIENT_EMAIL"),
+            "client_id": os.environ.get("FIREBASE_CLIENT_ID"),
+            "auth_uri": os.environ.get("FIREBASE_AUTH_URI"),
+            "token_uri": os.environ.get("FIREBASE_TOKEN_URI"),
+            "auth_provider_x509_cert_url": os.environ.get("FIREBASE_AUTH_PROVIDER_X509_CERT_URL"),
+            "client_x509_cert_url": os.environ.get("FIREBASE_CLIENT_X509_CERT_URL")
+        }
+        cred = credentials.Certificate(firebase_config)
+
     firebase_admin.initialize_app(cred)
 db = firestore.client()
 
@@ -725,9 +744,9 @@ elif st.session_state.authenticated:
     # DASHBOARD - Main Application
 
     # Initialize LLM
-    GROQ_API_KEY = st.secrets.get("GROQ_API_KEY")
+    GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
     if not GROQ_API_KEY:
-        st.error("🔑 Please add your GROQ_API_KEY to .streamlit/secrets.toml")
+        st.error("🔑 Please add your GROQ_API_KEY ")
         st.stop()
 
     llm = ChatGroq(api_key=GROQ_API_KEY, model="llama3-8b-8192", temperature=0.7)

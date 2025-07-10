@@ -9,3 +9,4 @@ markdown-it-py
 tqdm
 firebase-admin
 streamlit-option-menu
+json

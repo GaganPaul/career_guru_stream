@@ -749,7 +749,7 @@ elif st.session_state.authenticated:
         st.error("🔑 Please add your GROQ_API_KEY to .streamlit/secrets.toml")
         st.stop()
 
-    llm = ChatGroq(api_key=GROQ_API_KEY, model="llama3-8b-8192", temperature=0.7)
+    llm = ChatGroq(api_key=GROQ_API_KEY, model="llama-3.1-8b-instant", temperature=0.7)
 
     # Sidebar Navigation
     with st.sidebar:

@@ -1,7 +1,7 @@
 # Imports
 import streamlit as st
 from langchain_groq import ChatGroq
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 import docx2txt
 import pdfplumber
 import os

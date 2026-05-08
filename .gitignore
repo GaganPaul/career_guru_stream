@@ -1,0 +1,17 @@
+# Streamlit secrets
+.streamlit/secrets.toml
+
+# Firebase credentials
+serviceAccountKey.json
+*.json
+
+# Virtual environment
+.venv/
+env/
+venv/
+
+# IDE and Python
+.idea/
+__pycache__/
+*.pyc
+.env

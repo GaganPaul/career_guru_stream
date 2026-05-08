@@ -1,9 +1,26 @@
 # Streamlit secrets
 .streamlit/secrets.toml
+.streamlit/
 
 # Firebase credentials
 serviceAccountKey.json
+*-firebase-adminsdk-*.json
 *.json
+
+# Environment variables and secrets
+.env
+.env.local
+.env.*.local
+.env.production.local
+*.pem
+*.key
+*.keystore
+
+# API Keys and credentials
+config.json
+credentials.json
+secrets.json
+.credentials/
 
 # Virtual environment
 .venv/
@@ -12,6 +29,13 @@ venv/
 
 # IDE and Python
 .idea/
+.vscode/
 __pycache__/
 *.pyc
-.env
+*.pyo
+*.egg-info/
+.pytest_cache/
+
+# OS files
+.DS_Store
+Thumbs.db

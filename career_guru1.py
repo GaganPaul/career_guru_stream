@@ -1,7 +1,7 @@
 # Imports
 import streamlit as st
 from langchain_groq import ChatGroq
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 import docx2txt
 import pdfplumber
 import os
@@ -759,7 +759,7 @@ elif st.session_state.authenticated:
     # DASHBOARD - Main Application
 
     # Initialize LLM
-    GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+    GROQ_API_KEY = st.secrets.get("GROQ_API_KEY")
     if not GROQ_API_KEY:
         st.error("🔑 Please add your GROQ_API_KEY to .streamlit/secrets.toml")
         st.stop()

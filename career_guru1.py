@@ -16,13 +16,15 @@ if not firebase_admin._apps:
     # For local development
     if os.path.exists("serviceAccountKey.json"):
         cred = credentials.Certificate("serviceAccountKey.json")
+        firebase_admin.initialize_app(cred)
     else:
         # For production (Render.com)
+        private_key = os.environ.get("FIREBASE_PRIVATE_KEY", "")
         firebase_config = {
             "type": os.environ.get("FIREBASE_TYPE"),
             "project_id": os.environ.get("FIREBASE_PROJECT_ID"),
             "private_key_id": os.environ.get("FIREBASE_PRIVATE_KEY_ID"),
-            "private_key": os.environ.get("FIREBASE_PRIVATE_KEY").replace('\\n', '\n'),
+            "private_key": private_key.replace('\\n', '\n') if private_key else "",
             "client_email": os.environ.get("FIREBASE_CLIENT_EMAIL"),
             "client_id": os.environ.get("FIREBASE_CLIENT_ID"),
             "auth_uri": os.environ.get("FIREBASE_AUTH_URI"),
@@ -31,10 +33,23 @@ if not firebase_admin._apps:
             "client_x509_cert_url": os.environ.get("FIREBASE_CLIENT_X509_CERT_URL"),
             "universe_domain": os.environ.get("UNIVERSE_DOMAIN")
         }
-        cred = credentials.Certificate(firebase_config)
+        
+        # Only initialize if config is present to prevent crashing on load without env vars
+        if firebase_config.get("project_id") and firebase_config.get("private_key"):
+            try:
+                cred = credentials.Certificate(firebase_config)
+                firebase_admin.initialize_app(cred)
+            except Exception as e:
+                print(f"Warning: Failed to initialize Firebase from environment variables: {e}")
 
-    firebase_admin.initialize_app(cred)
-db = firestore.client()
+try:
+    if firebase_admin._apps:
+        db = firestore.client()
+    else:
+        db = None
+except Exception as e:
+    print(f"Warning: Firestore client initialization failed: {e}")
+    db = None
 
 # Modern Theme Configuration
 st.set_page_config(
@@ -749,7 +764,7 @@ elif st.session_state.authenticated:
         st.error("🔑 Please add your GROQ_API_KEY to .streamlit/secrets.toml")
         st.stop()
 
-    llm = ChatGroq(api_key=GROQ_API_KEY, model="llama-3.1-8b-instant", temperature=0.7)
+    llm = ChatGroq(api_key=GROQ_API_KEY, model="meta-llama/llama-4-scout-17b-16e-instruct", temperature=0.7)
 
     # Sidebar Navigation
     with st.sidebar:

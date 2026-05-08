@@ -1,9 +1,17 @@
 import firebase_admin
 from firebase_admin import credentials, firestore
 
+import os
+
 # ----------- Initialize Firebase -----------
-cred = credentials.Certificate("C:\\Users\\Gagan\\OneDrive\\Desktop\\career_guru_stream\\careerguru-f1540-firebase-adminsdk-fbsvc-e0a2a00921.json")  # Replace with your key file path
-firebase_admin.initialize_app(cred)
+key_path = "serviceAccountKey.json"
+if os.path.exists(key_path):
+    cred = credentials.Certificate(key_path)
+    firebase_admin.initialize_app(cred)
+else:
+    print(f"Warning: Please place your Firebase key file at {key_path}")
+    print("Cannot proceed with sample data insertion without Firebase credentials.")
+    exit(1)
 
 db = firestore.client()
 

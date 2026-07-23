@@ -1,6 +1,8 @@
 streamlit
-langchain
-langchain-groq
+langchain==0.3.30
+langchain-core==0.3.86
+langchain-groq==0.3.8
+langchain-text-splitters==0.3.11
 docx2txt
 pdfplumber
 pypdf2

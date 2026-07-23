@@ -1,7 +1,10 @@
 # Imports
 import streamlit as st
 from langchain_groq import ChatGroq
-from langchain_core.prompts import PromptTemplate
+try:
+    from langchain_core.prompts import PromptTemplate
+except ImportError:
+    from langchain.prompts import PromptTemplate
 import docx2txt
 import pdfplumber
 import os
@@ -764,7 +767,7 @@ elif st.session_state.authenticated:
         st.error("🔑 Please add your GROQ_API_KEY to .streamlit/secrets.toml")
         st.stop()
 
-    llm = ChatGroq(api_key=GROQ_API_KEY, model="meta-llama/llama-4-scout-17b-16e-instruct", temperature=0.7)
+    llm = ChatGroq(api_key=GROQ_API_KEY, model="llama-3.3-70b-versatile", temperature=0.7)
 
     # Sidebar Navigation
     with st.sidebar:

@@ -8,6 +8,8 @@ except ImportError:
 import docx2txt
 import pdfplumber
 import os
+import hashlib
+import base64
 import firebase_admin
 from firebase_admin import credentials, firestore, auth
 from streamlit_option_menu import option_menu
@@ -451,12 +453,40 @@ if "user" not in st.session_state:
     st.session_state.user = None
 
 
+def _hash_password(password: str) -> tuple[str, str]:
+    salt = base64.urlsafe_b64encode(os.urandom(16)).decode("utf-8")
+    hash_bytes = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt.encode("utf-8"),
+        100_000,
+    )
+    password_hash = base64.urlsafe_b64encode(hash_bytes).decode("utf-8")
+    return password_hash, salt
+
+
+def _verify_password(password: str, salt: str, password_hash: str) -> bool:
+    hash_bytes = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt.encode("utf-8"),
+        100_000,
+    )
+    return base64.urlsafe_b64encode(hash_bytes).decode("utf-8") == password_hash
+
+
 # Authentication Functions
 def register_user(email, password):
     try:
+        existing_users = list(db.collection("users").where("email", "==", email).stream())
+        if existing_users:
+            return False, "An account with this email already exists. Please log in."
+        password_hash, password_salt = _hash_password(password)
         user = auth.create_user(email=email, password=password)
         db.collection("users").document(user.uid).set({
             "email": email,
+            "password_hash": password_hash,
+            "password_salt": password_salt,
             "chat_history": [],
             "created_at": firestore.SERVER_TIMESTAMP
         })
@@ -469,10 +499,15 @@ def login_user(email, password):
     try:
         users = db.collection("users").where("email", "==", email).stream()
         for user in users:
-            st.session_state.authenticated = True
-            st.session_state.user = user.id
-            st.session_state.page = "dashboard"
-            return True, "Welcome back! Login successful."
+            data = user.to_dict() or {}
+            stored_hash = data.get("password_hash")
+            stored_salt = data.get("password_salt")
+            if stored_hash and stored_salt and _verify_password(password, stored_salt, stored_hash):
+                st.session_state.authenticated = True
+                st.session_state.user = user.id
+                st.session_state.page = "dashboard"
+                return True, "Welcome back! Login successful."
+            return False, "Invalid credentials. Please check your email and password."
         return False, "Invalid credentials. Please check your email and password."
     except Exception as e:
         return False, f"Login failed: {str(e)}"
@@ -604,11 +639,13 @@ elif st.session_state.page == "login":
         col1, col2 = st.columns(2)
 
         with col1:
-            login_btn = st.form_submit_button("🚀 Sign In", use_container_width=True)
+            login_btn = st.form_submit_button("🚀 Sign In", use_container_width=True, key="login_submit")
 
         with col2:
-            if st.form_submit_button("📝 Create Account", use_container_width=True):
-                go_to_page("register")
+            create_account_btn = st.form_submit_button("📝 Create Account", use_container_width=True, key="login_create_account")
+
+    if create_account_btn:
+        go_to_page("register")
 
     if login_btn:
         if email and password:
@@ -616,8 +653,7 @@ elif st.session_state.page == "login":
                 success, msg = login_user(email, password)
                 if success:
                     st.success(msg)
-                    time.sleep(1)
-                    st.rerun()
+                    st.experimental_rerun()
                 else:
                     st.error(msg)
         else:
@@ -652,11 +688,13 @@ elif st.session_state.page == "register":
         col1, col2 = st.columns(2)
 
         with col1:
-            register_btn = st.form_submit_button("🎉 Create Account", use_container_width=True)
+            register_btn = st.form_submit_button("🎉 Create Account", use_container_width=True, key="register_submit")
 
         with col2:
-            if st.form_submit_button("🔐 Already have account?", use_container_width=True):
-                go_to_page("login")
+            already_account_btn = st.form_submit_button("🔐 Already have account?", use_container_width=True, key="register_have_account")
+
+    if already_account_btn:
+        go_to_page("login")
 
     if register_btn:
         if email and password and confirm_password:
@@ -666,7 +704,6 @@ elif st.session_state.page == "register":
                         success, msg = register_user(email, password)
                         if success:
                             st.success(msg)
-                            time.sleep(2)
                             go_to_page("login")
                         else:
                             st.error(msg)
@@ -764,7 +801,13 @@ elif st.session_state.authenticated:
     # Initialize LLM
     GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
     if not GROQ_API_KEY:
-        st.error("🔑 Please add your GROQ_API_KEY to .streamlit/secrets.toml")
+        try:
+            GROQ_API_KEY = st.secrets.get("GROQ_API_KEY")
+        except Exception:
+            GROQ_API_KEY = None
+
+    if not GROQ_API_KEY:
+        st.error("🔑 Please add your GROQ_API_KEY to environment variables or .streamlit/secrets.toml")
         st.stop()
 
     llm = ChatGroq(api_key=GROQ_API_KEY, model="llama-3.3-70b-versatile", temperature=0.7)

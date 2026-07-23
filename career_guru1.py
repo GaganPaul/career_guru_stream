@@ -653,7 +653,7 @@ elif st.session_state.page == "login":
                 success, msg = login_user(email, password)
                 if success:
                     st.success(msg)
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
                     st.error(msg)
         else:
